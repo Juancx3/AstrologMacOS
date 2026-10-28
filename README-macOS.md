@@ -38,11 +38,53 @@ keyboard shortcuts and an in-window command box to make that easier.
 | Command Line Tools for Xcode | C++ compiler and `git` | `xcode-select --install` (full Xcode is not needed) |
 | XQuartz | Shows the graphics window (X11) | <https://www.xquartz.org> |
 
-Nothing else is required: no Homebrew, no other libraries.
+Nothing else is required: no Homebrew, no other libraries. The installer
+below checks for both and helps you install whatever is missing.
 
 ## Installation
 
-### 1. Install the Command Line Tools
+### Quick install (recommended)
+
+Open the Terminal (Applications → Utilities → Terminal), paste this line and
+press Return:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Juancx3/AstrologMacOS/Macos-AppleSilicon-x11/macos/install.sh)
+```
+
+The installer explains each step and asks before changing any setting. It:
+
+1. Checks for the Command Line Tools and, if they're missing, starts their
+   installation and waits for it to finish.
+2. Checks for XQuartz. If it's missing, it installs it with Homebrew when you
+   have Homebrew, or opens the XQuartz download page. In that case, install
+   it, **restart the Mac**, and run the installer again.
+3. Downloads Astrolog into `~/Astrolog` and builds it (about a minute).
+4. Creates your settings file, `astrolog.as`, and asks for your default city.
+   It finds the city in Astrolog's atlas and sets the time zone and location
+   for you.
+5. Sets the two XQuartz keyboard options this fork needs (see step 6 of the
+   manual installation).
+6. Offers to open the Keyboard settings, to use F1–F12 as standard function
+   keys.
+7. Creates `Astrolog.app` in your Applications folder, so you can open
+   Astrolog from Spotlight, Launchpad or the Dock.
+
+If you just installed XQuartz, restart the Mac before opening Astrolog.
+
+**To update**, run the same command again, or `bash ~/Astrolog/macos/install.sh`.
+It downloads the latest version and rebuilds. It never overwrites your
+`astrolog.as` or your charts.
+
+Options: `--dir FOLDER` installs somewhere other than `~/Astrolog`;
+`--city "Madrid, ES"` sets the city without asking; `--yes` accepts every
+default answer; `--no-app` skips creating `Astrolog.app`.
+
+### Manual installation
+
+If you prefer to do each step yourself:
+
+#### 1. Install the Command Line Tools
 
 ```bash
 xcode-select --install
@@ -55,7 +97,7 @@ c++ --version
 git --version
 ```
 
-### 2. Install XQuartz
+#### 2. Install XQuartz
 
 Download the `.pkg` from <https://www.xquartz.org> and install it. Then
 **restart the Mac**, or at least log out and back in. XQuartz needs this to
@@ -71,7 +113,7 @@ After restarting, check that X11 works:
 A pair of eyes that follow the mouse should appear. If they don't, see
 [Troubleshooting](#troubleshooting).
 
-### 3. Download the source code
+#### 3. Download the source code
 
 ```bash
 cd ~
@@ -79,15 +121,15 @@ git clone -b Macos-AppleSilicon-x11 https://github.com/Juancx3/AstrologMacOS.git
 cd Astrolog
 ```
 
-### 4. Build
+#### 4. Build
 
 ```bash
-c++ -O2 -I/opt/X11/include -Wno-write-strings -Wno-narrowing -Wno-comment -Wno-deprecated-declarations -c *.cpp
-c++ -o astrolog *.o -L/opt/X11/lib -lX11 -lm
+make -f macos/Makefile -j8
 ```
 
-This takes about a minute. Some warnings may still appear; only lines that
-contain `error:` are a problem.
+This takes about a minute. Some warnings may appear; only lines that
+contain `error:` are a problem. To build a program that also runs on Intel
+Macs, add `UNIVERSAL=1`.
 
 Check that the program is native to Apple Silicon:
 
@@ -97,7 +139,17 @@ file astrolog
 
 It should say `Mach-O 64-bit executable arm64`.
 
-### 5. Adjust XQuartz
+#### 5. Create your settings file
+
+```bash
+cp macos/astrolog-default.as astrolog.as
+mkdir -p charts
+```
+
+Then edit `astrolog.as` and set your time zone and location (`-z`, `-zl` and
+`-zj`). See [Settings file](#settings-file-astrologas).
+
+#### 6. Adjust XQuartz
 
 Open XQuartz, then go to **XQuartz → Settings → Input** and change two
 options:
@@ -108,13 +160,20 @@ options:
 - **Check** "Option keys send Alt_L and Alt_R". This is needed for the
   Option + function key macros.
 
-### 6. Function keys
+Or do the same from the Terminal, with XQuartz closed:
+
+```bash
+defaults write org.xquartz.X11 enable_key_equivalents -bool false
+defaults write org.xquartz.X11 option_sends_alt -bool true
+```
+
+#### 7. Function keys
 
 By default, F1–F12 on a Mac control brightness, volume, etc. Either hold
 `fn` while pressing them, or enable **System Settings → Keyboard → Keyboard
 Shortcuts → Function Keys → "Use F1, F2, etc. keys as standard function keys"**.
 
-### 7. Optional: run Astrolog from any folder
+#### 8. Optional: run Astrolog from any folder
 
 Add these lines to `~/.zshrc`, then open a new Terminal window:
 
@@ -149,8 +208,9 @@ and the help lists appear there.
 
 ### Launching from an icon
 
-You can create an `Astrolog.app` that opens Astrolog from the Dock, Launchpad,
-Spotlight or Finder. Run this once, after building:
+The installer creates an `Astrolog.app` that opens Astrolog from the Dock,
+Launchpad, Spotlight or Finder. If you installed by hand, run this once, after
+building:
 
 ```bash
 cd ~/Astrolog
@@ -254,17 +314,21 @@ looks the city up in its atlas, so you can type a name like "Toronto".
 
 ## Settings file (astrolog.as)
 
-Astrolog reads its default settings from `astrolog.as` in its folder. The one
-in this fork is the standard file with the Windows-only switches commented
-out, plus a few personal display preferences: Toronto as the default
-location, aspect orbs, and the charts folder in `-Yi4`. Edit it to suit you:
-mainly your time zone and location (`-z`, `-zl`, `-zj`) and, if you like,
-`=X` to always start in graphics mode.
+Astrolog reads its default settings from `astrolog.as` in its folder. This
+file is yours: it isn't part of the repository, so updates never overwrite
+it. The installer creates it from `macos/astrolog-default.as`, the standard
+settings with a few changes for the Mac: it starts with the chart for now in
+the graphics window, uses larger glyphs for Retina screens, and looks for
+chart files in the `charts` folder (`-Yi4 "charts"`).
+
+Edit it to suit you. The location lines are `-z` (time zone), `-zl`
+(longitude and latitude) and `-zj` (place name).
 
 If you bring a settings file from the Windows version, comment out
 (prefix with `;`) every line that begins with `-W`, `_W` or `=W`, such as
 `-WM`, `-WN` and `=Wh`. The Mac version doesn't know these switches. It stops
-at the first one it finds and shows no chart.
+at the first one it finds and shows no chart. The installer offers to do this
+for you if it finds such lines.
 
 Your chart files from Windows work as they are.
 
@@ -355,6 +419,7 @@ git fetch upstream
 git rebase upstream/master
 ```
 
-Then build again with the two commands in step 4. If the author changed the
+Then build again with `make -f macos/Makefile -j8`, or run
+`bash macos/install.sh`. If the author changed the
 same parts of `xscreen.cpp` or `general.cpp`, git will report a conflict that
 has to be resolved by hand.

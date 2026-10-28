@@ -1,0 +1,7 @@
+charts/
+*.o
+astrolog
+*.patch
+*.old
+*.original
+*.as

@@ -1,17 +1,18 @@
-@AD800  ; Astrolog 8.00 default settings file astrolog.as
+@AD800  ; Astrolog 8.00 sample settings file astrolog.as,
+; customized for MacOS Apple Silicon compilation (Windows only switches are disabled)
 
 ; The contents of this file can be automatically generated with the
 ; "File / Save Program Settings" menu command, or with the -od command switch.
 
--z 8:00W                ; Default time zone     [hours W or E of UTC   ]
--z0 Autodetect          ; Default Daylight time [0 standard, 1 daylight]
--zl 122W19'59 47N36'35  ; Default location      [longitude and latitude]
--zv 167ft               ; Default elevation     [in feet or meters     ]
--zf 59F                 ; Default temperature   [in Fahren. or Celsius ]
--zj "Current moment now" "Seattle, WA, USA" ; Default name and location
+-z 5:00W                 ; Default time zone     [hours W or E of UTC   ]
+-z0 Autodetect           ; Default Daylight time [0 standard, 1 daylight]
+-zl  79W23'00  43N42'00  ; Default location      [longitude and latitude]
+-zv 251ft                ; Default elevation     [in feet or meters     ]
+-zf 59F                  ; Default temperature   [in Fahren. or Celsius ]
+-zj "Current moment now" "Toronto, ON" ; Default name and location
 
 -Yz 0   ; Time minute addition to be used if "now" charts are offset.
-;-n      ; Comment out this line to not start with chart for "now".
+-n      ; Comment out this line to not start with chart for "now".
 
 _s      ; Which zodiac to use       ["_s" is tropical, "=s" is sidereal]
 :s Faga ; Sidereal zodiac offset    [Change "Faga" to desired ayanamsa ]
@@ -20,7 +21,7 @@ _sr0    ; Latitudes or declinations ["_sr0" shows lat., "=sr0" declin. ]
 -A 5    ; Number of aspects         [Change "5" to desired number      ]
 -c Plac ; House system              [Change "Plac" to desired system   ]
 _c3     ; 3D house boundaries       ["=c3" is 3D houses, "_c3" is 2D   ]
-_k      ; Ansi color text           ["=k" is color, "_k" is monochrome ]
+=k      ; Ansi color text           ["=k" is color, "_k" is monochrome ]
 _b0     ; Print zodiac seconds      ["_b0" to minute, "=b0" to second  ]
 _b1     ; Print zodiac milliseconds ["_b1" to second, "=b1" to millisec]
 _b2     ; Don't display :00 seconds ["_b2" shows anyway, "=b2" skips   ]
@@ -63,6 +64,7 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 -Yi1 "ephem"
 -Yi2 "font"
 -Yi3 "source"
+-Yi4 "charts"
 
 
 ; DEFAULT RESTRICTIONS:
@@ -76,10 +78,10 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 ; 84-133: Fixed stars
 
 -YR 0 10     1 0 0 0 0 0 0 0 0 0 0    ; Planets
--YR 11 21    1 1 1 1 1 0 1 1 1 1 1    ; Minor planets
+-YR 11 21    1 1 1 1 1 0 1 1 0 1 1    ; Minor planets
 -YR 22 33    0 1 1 1 1 1 1 1 1 0 1 1  ; House cusps
 -YR 34 42    1 1 1 1 1 1 1 1 1        ; Uranians
--YR 43 51    1 1 1 1 1 1 1 1 1        ; Dwarfs
+-YR 43 51    0 0 0 0 0 0 0 0 0        ; Dwarfs
 -YR 52 78    1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  ; Moons
 -YR 79 83    1 1 1 1 1                ; Centers of body
 -YR 84 108   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  ; Fixed stars
@@ -87,9 +89,9 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 
 ; DEFAULT TRANSIT RESTRICTIONS:
 
--YRT 0 10    1 0 1 0 0 0 0 0 0 0 0    ; Planets
--YRT 11 21   1 1 1 1 1 0 1 1 1 1 1    ; Minor planets
--YRT 22 33   1 1 1 1 1 1 1 1 1 1 1 1  ; House cusps
+-YRT 0 10    1 0 0 0 0 0 0 0 0 0 0    ; Planets
+-YRT 11 21   1 1 1 1 1 1 1 1 1 1 1    ; Minor planets
+-YRT 22 33   0 1 1 1 1 1 1 1 1 0 1 1  ; House cusps
 -YRT 34 42   1 1 1 1 1 1 1 1 1        ; Uranians
 -YRT 43 51   1 1 1 1 1 1 1 1 1        ; Dwarfs
 -YR 52 78    1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  ; Moons
@@ -112,7 +114,7 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 ; 12-18: SQn Sep Nov BNv BSp TSp QNv
 ; 19-24: TDc Un1 Un2 Un3 Un4 Un5
 
--YAo 1 5     7 7 7 7 6      ; Major aspects
+-YAo 1 5     4 4 4 4 3      ; Major aspects
 -YAo 6 11    3 3 3 3 2 2    ; Minor aspects
 -YAo 12 18   1 1 1 1 1 1 1  ; Obscure aspects
 -YAo 19 24   0.5 0.5 0.5 0.5 0.5 0.5  ; Very obscure aspects
@@ -138,7 +140,7 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 
 ; DEFAULT INFLUENCES:
 
--Yj 0 10    30 30 25 10 10 10 10 10  8  8  8     ; Planets
+-Yj 0 10    30 30 25 10 10 10 12 12 10  8  8     ; Planets
 -Yj 11 21    6  5  5  5  5  5  5  4  4  4  4     ; Minor planets
 -Yj 22 33   20 10 10 10 10 10 10 10 10 15 10 10  ; Cusp objects
 -Yj 34 42    4  3  3  3  3  3  3  3  3           ; Uranians
@@ -147,7 +149,7 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 
 -YjC 1 12   20 0 0 10 0 0 5 0 0 15 0 0  ; Houses
 
--YjA 1 5    1.0 0.8 0.8 0.6 0.6          ; Major aspects
+-YjA 1 5    1.0 0.8 0.8 0.7 0.6          ; Major aspects
 -YjA 6 11   0.4 0.4 0.2 0.2 0.2 0.2      ; Minor aspects
 -YjA 12 18  0.1 0.1 0.1 0.1 0.1 0.1 0.1  ; Obscure aspects
 
@@ -201,7 +203,7 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 ; Magenta, Maroon, DkGreen, DkCyan, DkBlue; Element, Ray, Star, Planet;
 ; DkGray, Orange, Pink, Brown, Indigo, Forest, Amber, Rose, Sky, Violet
 
--YkO 0 10   Yel Ele Ele Ele Ele Ele Ele Ele Ele Ele Ele      ; Planet colors
+-YkO 0 10   Yel Ele Ele Ele Gre Ele Ele Ele Yel Ele Ele      ; Planet colors
 -YkO 11 21  Mag Mag Mag Mag Mag DkC DkC DkC DkC DkC DkC      ; Minor colors
 -YkO 22 33  Ele Ele Ele Ele Ele Ele Ele Ele Ele Ele Ele Ele  ; Cusp colors
 -YkO 34 42  Pur Pur Pur Pur Pur Pur Pur Pur Pur              ; Uranian colors
@@ -215,16 +217,13 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 -YkA 6 11   Mag Mag Mai Mai DkC DkC      ; Minor aspect colors
 -YkA 12 18  DkC Mar Pur Pur Mar Mar Pur  ; Obscure aspect colors
 
--YkC        Red Yel Gre Blu                      ; Element colors
+-YkC        Red Gre Yel Blu                      ; Element colors
 -Yk7 1 7    Red Ind For Yel Amb Ros Vio          ; Ray colors
--Yk0 1 7    Red Mai Yel Gre Cya Blu Pur          ; Rainbow colors
--Yk  0 8    Bla Whi LtG Gra Mar DkG DkC DkB Mag  ; Main colors
+-Yk0 1 7    Red Mai Yel Gre Cya Blu Whi          ; Rainbow colors
+-Yk  0 8    Bla Whi Whi Gra Mar DkG DkC DkB Whi  ; Main colors
 
 
 ; OBJECT CUSTOMIZATION:
-
-; [No objects are different from defaults]
-
 
 ; STAR CUSTOMIZATION:
 
@@ -236,10 +235,10 @@ _pc           ; Solar arc recalc based on MC   [=pc recalculates]
 _XJ              ; Indian type wheels ["_XJ" is Western, "=XJ" is Indian  ]
 =Xm              ; Color charts       ["=Xm" is color, "_Xm" is monochrome]
 _Xr              ; Reverse background ["_Xr" is black, "=Xr" is white     ]
-:Xw 600 600      ; Default X and Y resolution (not including sidebar)
-:Xs 200          ; Character scale     [100-400]
-:XS 100          ; Graphics text scale [100-400]
-:XI0 25 1        ; Transparency % and background orientation [0-100, -1 to 1 ]
+:Xw 800 800      ; Default X and Y resolution (not including sidebar)
+:Xs 300          ; Character scale     [100-400]
+:XS 150          ; Graphics text scale [100-400]
+:XI0 0 1        ; Transparency % and background orientation [0-100, -1 to 1 ]
 =XQ              ; Square charts ["=XQ" forces square, "_XQ" allows rectangle]
 =XQ0             ; Autoscale     ["=XQ0" autoscales glyphs, "_XQ0" doesn't   ]
 =Xu              ; Chart border  ["=Xu" shows border, "_Xu" doesn't show     ]
@@ -257,11 +256,11 @@ _XL              ; Show cities   ["=XL" shows them in charts, "_XL" doesn't  ]
 :YXj 0           ; Orbit trail count
 :YX7 600         ; Esoteric Ray column influence width
 :YXx 0           ; Line thickness adjustment for vector formats
-:YXf #000000     ; Fonts to use [text, signs, houses, planets, aspects, naks.]
+:YXf #550550     ; Fonts to use [text, signs, houses, planets, aspects, naks.]
 :YXp 0           ; PostScript paper orientation ["-1" portrait, "1" landscape]
 :YXp0 8.5in 11in ; PostScript paper X and Y sizes
 
-_X               ; Graphics chart display ["_X" is text, "=X" is graphics]
+=X               ; Graphics chart display ["_X" is text, "=X" is graphics]
 
 
 ; MACROS:
@@ -278,5 +277,32 @@ _X               ; Graphics chart display ["_X" is text, "=X" is graphics]
 -M0 46 "_R For -r2 ~20 1 ';Ari;Tau;Gem;Can;Leo;Vir;Lib;Sco;Sag;Cap;Aqu;Pis' ~3 1 '15 8 20 25 19 20 8 15 12 27 30 12' ~q2 'If Equ Context 1 =m JulianT If Equ Context 2 =n JulianT' ~M 1 '=q Var @y While Gte @o Mul Var Var @y @x Do2 =o Sub @o Mul Var Var @y @x = @y ?: Lt Var @y 12 Inc Var @y 1 If Equ Var @y @q = @y Inc Mod Add Dec Var @y 6 12' ~Xt '=o Sub @n @m =s LonSign ObjLon1 O_For =x 360 =y %s Macro 1 =t @s =x 30 =y %t Macro 1 =u @t =x 2.5 =y %u Macro 1 =v @u =x Div @x 12 =y %v Macro 1 For %z 0 3 = Add 27 @z ObjCol Add O_Asc Dec Var Add %s @z' -YXt '\n\27Releasing L1: \s\n\28Releasing L2: \t\n\29Releasing L3: \u\n\30Releasing L4: \v' =X"
 -M0 47 "=Xr -Xv 6 :XI0 100 1 -YkO Ear Eas Ray Ray Ray Ray Ray Ray Ray Ray Ray Ray Ray LtG LtG LtG LtG LtG LtG LtG LtG LtG LtG LtG -YkO Vul Vul Ray -YkO Hyg Orc LtG LtG Ray Ray Ray Ray Ray Ray Ray :YXG 113221"
 -M0 48 "-M30 '-Y10 Ear Asc' '-Y10 Asc Asc' '-Y10 Sun Asc' '-Y1 Ear Ear' -i2 __1 -i3 __1 -r3 -c Whole _R Vul -YXt '\nSpecial: Triple Sun'"
+
+
+; WINDOWS MENUS (only work on Windows):
+
+;-WM 37 "&Clear Macro Settings"
+;-WM 38 "&Draconic Zodiac"
+;-WM 39 "&Southern Zodiac"
+;-WM 40 "&Out of Bounds"
+;-WM 41 "T&raditional Planets"
+;-WM 42 "&Antiscia Aspects"
+;-WM 43 "Antiscia &Wheel"
+;-WM 44 "Annual &Profection"
+;-WM 45 "&Firdaria Periods"
+;-WM 46 "&Zodiacal Releasing"
+;-WM 47 "&Esoteric Coloring"
+;-WM 48 "&Triple Sun"
+;-WM0 3 "Sample &Macros"
+
+
+; WINDOWS DEFAULTS (only work on Windows):
+
+;-WN  200 ; Animation update delay in milliseconds
+;-Wx 8    ; Antialiasing line detail level ["1" is simplest, "12" is nicest   ]
+;_Wn      ; Buffer redraws                 ["=Wn" buffers, "_Wn" on screen    ]
+;=Wh      ; Hourglass cursor on redraw     ["=Wh" has hourglass, "_Wh" doesn't]
+;_Wt      ; Don't show popup messages      ["=Wt" doesn't show, "_Wt" shows   ]
+;=Wb      ; Export bitmaps based on window ["=Wb" from window, "_Wb" created  ]
 
 ; astrolog.as

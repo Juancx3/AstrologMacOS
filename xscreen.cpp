@@ -614,6 +614,309 @@ void ResizeWindowToChart()
 #endif
 
 
+#ifdef X11
+// Mac/X11 keyboard additions: function keys run macros like in the Windows
+// version, and Command key shortcuts for common chart types.
+
+#define keyTransitX  1001   // Command+Shift+N: Transit and natal (toggle)
+#define keyProgressX 1002   // Command+Shift+P: Progressed and natal (toggle)
+#define keyAspListX  1003   // Command+L: Aspect list printed in terminal
+#define keyGridX     1004   // Command+Shift+A: Aspect grid (toggle)
+#define keyCmdTermX  1005   // Shift+Return: Old style prompt in terminal
+
+// Return the modifier mask that the given keysyms are attached to, if any.
+
+int ModMaskX(KeySym ks1, KeySym ks2)
+{
+  XModifierKeymap *pmk;
+  KeySym *pks;
+  KeyCode kc;
+  int mask = 0, i, j, k, cks;
+
+  pmk = XGetModifierMapping(gi.disp);
+  if (pmk == NULL)
+    return 0;
+  for (i = 0; i < 8; i++)
+    for (j = 0; j < pmk->max_keypermod; j++) {
+      kc = pmk->modifiermap[i*pmk->max_keypermod + j];
+      if (kc == 0)
+        continue;
+      pks = XGetKeyboardMapping(gi.disp, kc, 1, &cks);
+      if (pks == NULL)
+        continue;
+      for (k = 0; k < cks; k++)
+        if (pks[k] == ks1 || pks[k] == ks2) {
+          mask |= (1 << i);
+          break;
+        }
+      XFree(pks);
+    }
+  XFreeModifiermap(pmk);
+  return mask;
+}
+
+
+// Translate function keys and Command key shortcuts into internal key codes.
+// Returns 0 if the key should be handled normally.
+
+static int maskCmd = -1, maskAlt = 0;
+
+void InitModMasksX()
+{
+  if (maskCmd >= 0)
+    return;
+  maskCmd = ModMaskX(XK_Meta_L, XK_Meta_R) |
+    ModMaskX(XK_Super_L, XK_Super_R);
+  maskAlt = ModMaskX(XK_Alt_L, XK_Alt_R) & ~maskCmd;
+#ifdef __APPLE__
+  if (maskCmd == 0)
+    maskCmd = Mod2Mask;    // XQuartz puts the Command key on mod2.
+#endif
+}
+
+int KeyCustomX(XKeyEvent *pxk, KeySym keysym)
+{
+  int bank, ch;
+  flag fShift, fCtrl, fAlt, fCmd;
+
+  InitModMasksX();
+  fShift = (pxk->state & ShiftMask) != 0;
+  fCtrl  = (pxk->state & ControlMask) != 0;
+  fAlt   = maskAlt != 0 && (pxk->state & maskAlt) != 0;
+  fCmd   = maskCmd != 0 && (pxk->state & maskCmd) != 0;
+
+  // F1-F12 run macros 1-96, using the same modifier banks as Windows:
+  // none 1-12, Shift 13-24, Ctrl 25-36, Alt 37-48, Shift+Ctrl 49-60,
+  // Shift+Alt 61-72, Ctrl+Alt 73-84, Shift+Ctrl+Alt 85-96.
+  if (keysym >= XK_F1 && keysym <= XK_F12) {
+    if (fShift && fCtrl && fAlt) bank = 7;
+    else if (fCtrl && fAlt)      bank = 6;
+    else if (fShift && fAlt)     bank = 5;
+    else if (fShift && fCtrl)    bank = 4;
+    else if (fAlt)               bank = 3;
+    else if (fCtrl)              bank = 2;
+    else if (fShift)             bank = 1;
+    else                         bank = 0;
+    return 201 + (int)(keysym - XK_F1) + bank*12;
+  }
+
+  // Shift+Return keeps the original prompt in the terminal window.
+  if ((keysym == XK_Return || keysym == XK_KP_Enter) && fShift && !fCmd)
+    return keyCmdTermX;
+
+  if (!fCmd)
+    return 0;
+  ch = (keysym < 128) ? ChUncap((int)keysym) : 0;
+  if (ch == 'n' && fShift)
+    return keyTransitX;
+  if (ch == 'p' && fShift)
+    return keyProgressX;
+  if (ch == 'l' && !fShift)
+    return keyAspListX;
+  if (ch == 'a' && fShift)
+    return keyGridX;
+  return -1;    // Ignore other Command combinations.
+}
+
+
+// Toggle a comparison of the current chart with the present moment, either
+// transits (rcTransit) or progressions (rcProgress), like -yt or -yp.
+
+void ToggleRelNowX(int rc)
+{
+  CI ciT;
+
+  if (us.nRel == rc) {
+    us.nRel = rcNone;
+    return;
+  }
+  ciT = ciMain;
+  if (!FInputData(szNowCore))
+    return;
+  ciTwin = ciCore;
+  ciMain = ciCore = ciT;
+  us.nRel = rc;
+  if (rc == rcProgress)
+    us.nProgress = 0;
+}
+
+
+// In-window command line box, similar to the Windows version's Enter
+// Command Line dialog. It's drawn over the bottom of the chart window.
+
+#define cHistMaxX 32
+static char rgszHistCmdX[cHistMaxX][cchSzMax];
+static int cHistCmdX = 0;
+static char szCmdBoxX[cchSzMax];
+
+void DrawCommandBoxX(XFontStruct *pfs, GC gc, CONST char *szCmd,
+  CONST char *szMsg, unsigned long kvMsg)
+{
+  int asc = 12, des = 3, xch = 8, yLine, yBox, cLine, cchMax, cch;
+  unsigned long kvBg = BlackPixel(gi.disp, DefaultScreen(gi.disp)),
+    kvFg = WhitePixel(gi.disp, DefaultScreen(gi.disp));
+  char sz[cchSzMax+4];
+  CONST char *pch;
+
+  if (pfs != NULL) {
+    asc = pfs->ascent; des = pfs->descent;
+    xch = pfs->max_bounds.width > 0 ? pfs->max_bounds.width : 8;
+  }
+  yLine = asc + des + 4;
+  cLine = 2;
+  yBox = yLine*cLine + 8;
+
+  // Restore the chart image, then draw the box over the bottom of it.
+  XCopyArea(gi.disp, gi.pmap, gi.wind, gi.gc, 0, 0, gs.xWin, gs.yWin, 0, 0);
+  XSetForeground(gi.disp, gc, kvBg);
+  XFillRectangle(gi.disp, gi.wind, gc, 0, gs.yWin - yBox, gs.xWin, yBox);
+  XSetForeground(gi.disp, gc, kvFg);
+  XDrawRectangle(gi.disp, gi.wind, gc, 1, gs.yWin - yBox + 1,
+    gs.xWin - 3, yBox - 3);
+
+  // First line: the command being typed, scrolled to show its end.
+  cchMax = (gs.xWin - 16) / xch - 3;
+  if (cchMax < 8)
+    cchMax = 8;
+  cch = CchSz(szCmd);
+  pch = cch > cchMax ? szCmd + (cch - cchMax) : szCmd;
+  sprintf(sz, "> %s_", pch);
+  XDrawString(gi.disp, gi.wind, gc, 8, gs.yWin - yBox + 4 + asc,
+    sz, CchSz(sz));
+
+  // Second line: help text, or a message such as an error.
+  if (szMsg != NULL) {
+    XSetForeground(gi.disp, gc, kvMsg);
+    pch = szMsg;
+  } else
+    pch = "Enter: run   Esc: cancel   Up/Down: history";
+  XDrawString(gi.disp, gi.wind, gc, 8, gs.yWin - yBox + 4 + yLine + asc,
+    pch, CchSz(pch));
+  XFlush(gi.disp);
+}
+
+
+// Let the user type a command line in the box. sz holds any initial text and
+// receives the result. Returns fTrue if Enter was pressed, fFalse if canceled.
+
+flag FCommandBoxX(char *sz, CONST char *szMsg)
+{
+  XFontStruct *pfs;
+  XColor xc, xcExact;
+  GC gc;
+  XEvent xev;
+  KeySym ks;
+  char rgch[16];
+  int cch = CchSz(sz), iHist = cHistCmdX, n, i;
+  unsigned long kvMsg = WhitePixel(gi.disp, DefaultScreen(gi.disp));
+  flag fRet = fFalse, fDone = fFalse;
+
+  InitModMasksX();
+  pfs = XLoadQueryFont(gi.disp, "10x20");
+  if (pfs == NULL)
+    pfs = XLoadQueryFont(gi.disp, "9x15");
+  if (pfs == NULL)
+    pfs = XLoadQueryFont(gi.disp, "fixed");
+  gc = XCreateGC(gi.disp, gi.wind, 0, NULL);
+  if (pfs != NULL)
+    XSetFont(gi.disp, gc, pfs->fid);
+  if (XAllocNamedColor(gi.disp, DefaultColormap(gi.disp,
+    DefaultScreen(gi.disp)), "orange", &xc, &xcExact))
+    kvMsg = xc.pixel;
+
+  DrawCommandBoxX(pfs, gc, sz, szMsg, kvMsg);
+  while (!fDone) {
+    XNextEvent(gi.disp, &xev);
+    if (xev.type == Expose && xev.xexpose.count == 0) {
+      DrawCommandBoxX(pfs, gc, sz, szMsg, kvMsg);
+      continue;
+    }
+    if (xev.type == MappingNotify) {
+      XRefreshKeyboardMapping(&xev.xmapping);
+      continue;
+    }
+    if (xev.type != KeyPress)
+      continue;
+    n = XLookupString(&xev.xkey, rgch, sizeof(rgch)-1, &ks, NULL);
+    if (ks == XK_Return || ks == XK_KP_Enter) {
+      fRet = fDone = fTrue;
+    } else if (ks == XK_Escape) {
+      fDone = fTrue;
+    } else if (ks == XK_BackSpace || ks == XK_Delete) {
+      if (cch > 0)
+        sz[--cch] = chNull;
+    } else if (ks == XK_Up || ks == XK_Down) {
+      if (ks == XK_Up && iHist > 0)
+        iHist--;
+      else if (ks == XK_Down && iHist < cHistCmdX)
+        iHist++;
+      else
+        continue;
+      if (iHist < cHistCmdX)
+        sprintf(sz, "%s", rgszHistCmdX[iHist]);
+      else
+        *sz = chNull;
+      cch = CchSz(sz);
+    } else if (n > 0 && !(maskCmd > 0 && (xev.xkey.state & maskCmd))) {
+      for (i = 0; i < n && cch < cchSzMax - 1; i++)
+        if ((uchar)rgch[i] >= ' ' && rgch[i] != 127)
+          sz[cch++] = rgch[i];
+      sz[cch] = chNull;
+    } else
+      continue;
+    szMsg = NULL;    // Any message goes away once the user types.
+    if (!fDone)
+      DrawCommandBoxX(pfs, gc, sz, szMsg, kvMsg);
+  }
+
+  // Remember the command in the history list, skipping repeats.
+  if (fRet && cch > 0 && (cHistCmdX == 0 ||
+    !FEqSz(sz, rgszHistCmdX[cHistCmdX-1]))) {
+    if (cHistCmdX >= cHistMaxX) {
+      for (i = 1; i < cHistCmdX; i++)
+        sprintf(rgszHistCmdX[i-1], "%s", rgszHistCmdX[i]);
+      cHistCmdX--;
+    }
+    sprintf(rgszHistCmdX[cHistCmdX++], "%s", sz);
+  }
+
+  XFreeGC(gi.disp, gc);
+  if (pfs != NULL)
+    XFreeFont(gi.disp, pfs);
+  XCopyArea(gi.disp, gi.pmap, gi.wind, gi.gc, 0, 0, gs.xWin, gs.yWin, 0, 0);
+  XFlush(gi.disp);
+  return fRet && cch > 0;
+}
+
+
+// Run a command line typed in the box, the same way the terminal prompt does.
+// Returns fFalse if there was a problem with the switches.
+
+flag FRunCommandX(CONST char *sz)
+{
+  flag fT, fRet;
+
+  ciCore = ciMain;
+  fT = us.fLoop; us.fLoop = fTrue;    // Errors shouldn't exit the program.
+  is.cchRow = 0;
+  is.fSzInteract = fTrue;
+  fRet = FProcessCommandLine(sz);
+  if (fRet) {
+    is.fMult = fFalse;
+    FPrintTables();
+    if (is.fMult)
+      ClearB((pbyte)&us.fCredit,
+        (int)((pbyte)&us.fLoop - (pbyte)&us.fCredit));
+  }
+  is.fSzInteract = fFalse;
+  us.fLoop = fT;
+  ciMain = ciCore;
+  InitColorsX();
+  return fRet;
+}
+#endif // X11
+
+
 #ifndef WIN
 // This routine gets called after graphics are brought up and displayed on
 // the screen. It loops, processing key presses, mouse clicks, etc, that the
@@ -870,8 +1173,12 @@ void InteractX()
       // Process any keys user pressed in window.
       case KeyPress:
         length = XLookupString((XKeyEvent *)&xevent, xkey, 10, &keysym, 0);
-        if (length == 1) {
+        key = KeyCustomX((XKeyEvent *)&xevent, keysym);
+        if (key != 0)
+          length = 1;
+        else if (length == 1)
           key = xkey[0];
+        if (length == 1) {
 #endif // X11
 
 #ifdef WCLI
@@ -1209,9 +1516,56 @@ void InteractX()
             us.nScrollRow = length;
             break;
           case chReturn:
+#ifdef X11
+            // Type a command in a box inside the chart window. If it has an
+            // error, show the box again with the same text so it can be fixed.
+            szCmdBoxX[0] = chNull;
+            i = fFalse;
+            while (FCommandBoxX(szCmdBoxX, i ? "Error in command (details "
+              "in the Terminal). Edit and press Enter, or Esc." : NULL)) {
+              if (FRunCommandX(szCmdBoxX))
+                break;
+              i = fTrue;
+            }
+#else
+            CommandLineX();
+#endif
+            fResize = fCast = fTrue;
+            break;
+#ifdef X11
+          case keyCmdTermX:
             CommandLineX();
             fResize = fCast = fTrue;
             break;
+          case keyTransitX:
+            ToggleRelNowX(rcTransit);
+            fResize = fCast = fTrue;
+            break;
+          case keyProgressX:
+            ToggleRelNowX(rcProgress);
+            fResize = fCast = fTrue;
+            break;
+          case keyGridX:
+            if (gi.nMode == gGrid) {
+              gi.nMode = gWheel;
+              fAutosize = fTrue;
+            } else {
+              gi.nMode = gGrid;
+              fRedraw = fTrue;
+            }
+            break;
+          case keyAspListX:
+            length = us.nScrollRow;
+            us.nScrollRow = 0;
+            PrintL();
+            i = us.fListing; us.fListing = fFalse;
+            key = us.fAspList; us.fAspList = fTrue;
+            is.fMult = fFalse;
+            PrintChart(us.fProgress);
+            us.fListing = i; us.fAspList = key;
+            us.nScrollRow = length;
+            break;
+#endif
           case chDelete:
             fRedraw = fNoChart = fTrue;
             break;
@@ -1239,11 +1593,20 @@ void InteractX()
               // Process numbers 1-9 signifying animation rate.
               gi.nDir = (gi.nDir > 0 ? 1 : -1)*(key-'0');
               break;
-            } else if (FBetween(key, 201, 248)) {
+            } else if (FBetween(key, 201, 200 + cMacro)) {
               if (is.rgszMacro != NULL && is.rgszMacro[key-200]) {
                 is.fSzInteract = fTrue;
+#ifdef X11
+                ciCore = ciMain;  // So macros that load charts (-i) stick.
+                i = us.fLoop; us.fLoop = fTrue;  // Errors shouldn't exit.
+#endif
                 FProcessCommandLine(is.rgszMacro[key-200]);
                 is.fSzInteract = fFalse;
+#ifdef X11
+                us.fLoop = i;
+                ciMain = ciCore;
+                InitColorsX();    // So macros that change colors take effect.
+#endif
                 fResize = fCast = fTrue;
                 break;
               }

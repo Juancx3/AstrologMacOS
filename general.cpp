@@ -2348,10 +2348,14 @@ void GetTimeNow(int *mon, int *day, int *yea, real *tim, real dst, real zon)
   *tim = HMS(hr, min, sec);
   if (dst == dstAuto) {
     // Daylight field of 24 means autodetect whether Daylight Saving Time.
+    // Default to Standard time unless the time zone rules say otherwise,
+    // so is.fDst below reflects the actual Daylight setting.
 
+    dst = 0.0;
     SetCI(ci, *mon, *day, *yea, *tim, 0.0, zon, ciDefa.lon, ciDefa.lat);
     if (DisplayAtlasLookup(ciDefa.loc, 0, &i) &&
       DisplayTimezoneChanges(is.rgae[i].izn, 0, &ci)) {
+      dst = ci.dst;
       hr += ci.dst;
       while (hr < 0.0) {
         curtimer--;

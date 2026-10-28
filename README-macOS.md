@@ -18,7 +18,7 @@ It should also work on Intel Macs, since the build is the same.
 8. [Limitations](#limitations)
 9. [Troubleshooting](#troubleshooting)
 10. [Uninstalling](#uninstalling)
-11. [For maintainers: merging a new Astrolog version](#for-maintainers-merging-a-new-astrolog-version)
+11. [For maintainers](#for-maintainers)
 
 ## What you get
 
@@ -36,10 +36,16 @@ keyboard shortcuts and an in-window command box to make that easier.
 
 - A Mac with Apple Silicon (tested on macOS 26.7 Tahoe). Intel Macs should
   also work.
-- **Command Line Tools for Xcode** (the C++ compiler and `git`) and
-  **XQuartz** (which shows the graphics window). You don't need to install
-  them beforehand: the installer checks for both and helps you install
-  whatever is missing.
+- **XQuartz**, which shows Astrolog's graphics window. You don't need to
+  install it beforehand: the installer checks for it and helps you install it.
+
+There are two ways to install Astrolog:
+
+- **The ready-made app** (recommended). Nothing to compile. This is what
+  most people want.
+- **Building from the source code**, for those who want to read or change the
+  code. This also needs Apple's Command Line Tools (the C++ compiler and
+  `git`), which take several gigabytes of disk space.
 
 ## Installation
 
@@ -52,104 +58,132 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Juancx3/AstrologMacOS/Macos-
 
 The installer explains each step and asks before changing any setting. It:
 
-1. Checks for the Command Line Tools and, if they're missing, starts their
-   installation and waits for it to finish. Click **Install** in the window
-   that appears, not "Get Xcode".
-2. Checks for XQuartz. If it's missing, it installs it with Homebrew when you
+1. Checks for XQuartz. If it's missing, it installs it with Homebrew when you
    have Homebrew, or opens the XQuartz download page. In that case, install
    it, **restart the Mac**, and run the installer again.
-3. Downloads Astrolog into `~/Astrolog` and builds it (about a minute).
-4. Creates your settings file, `astrolog.as`, and asks for your default city.
-   It finds the city in Astrolog's atlas and sets the time zone and location
-   for you. Type the name in English; for common names add the country or
-   state code, such as `Madrid, ES` or `Paris, FR`.
-5. Sets two XQuartz keyboard options this fork needs: Command shortcuts go to
+2. Downloads `Astrolog.app` from the latest release, checks that the download
+   is complete and unaltered (SHA-256 checksum), and installs it in the
+   Applications folder of your user (`~/Applications`).
+3. Creates your settings folder, `~/Astrolog`, with your settings file,
+   `astrolog.as`, and a `charts` folder for your chart files. It asks for your
+   default city, finds it in Astrolog's atlas and sets the time zone and
+   location for you. Type the name in English; for common names add the
+   country or state code, such as `Madrid, ES` or `Paris, FR`.
+4. Sets two XQuartz keyboard options this fork needs: Command shortcuts go to
    Astrolog instead of XQuartz, and the Option key works with the function
    keys. With this, Command+Q no longer quits XQuartz; use its menu instead.
-6. Offers to open the Keyboard settings, so F1–F12 work as standard function
+5. Offers to open the Keyboard settings, so F1–F12 work as standard function
    keys. Otherwise, hold `fn` while pressing them.
-7. Creates `Astrolog.app` in your Applications folder, so you can open
-   Astrolog from Spotlight, Launchpad or the Dock.
 
 If you just installed XQuartz, **restart the Mac** before opening Astrolog.
 
 ### Updating
 
-Run the same command again, or:
-
-```bash
-bash ~/Astrolog/macos/install.sh
-```
-
-It downloads the latest version and rebuilds. It never overwrites your
-`astrolog.as` or your charts.
+Run the same command again. It installs the latest version of the app and
+never overwrites your `astrolog.as` or your charts.
 
 ### Installer options
 
 | Option | Effect |
 |--------|--------|
-| `--dir FOLDER` | Install in another folder instead of `~/Astrolog` |
+| `--dir FOLDER` | Keep your settings and charts in another folder instead of `~/Astrolog` |
 | `--city "Madrid, ES"` | Set the default city without asking |
 | `--yes` | Don't ask questions; accept the default answers |
-| `--no-app` | Don't create `Astrolog.app` |
+| `--from-source` | Build from the source code instead (see below) |
 
-Add options at the end of the command, for example
-`bash ~/Astrolog/macos/install.sh --city "Toronto, ON"`.
+Add options at the end of the command, after a space.
 
-## Running Astrolog
+### Downloading the app by hand
 
-From the Terminal:
+You can also download `Astrolog-macOS.zip` from the
+[Releases](https://github.com/Juancx3/AstrologMacOS/releases) page, unzip it
+and move `Astrolog.app` to your Applications folder. The first time you open
+it, the app asks for your city and sets things up.
+
+The app isn't signed with an Apple developer certificate, so macOS blocks a
+copy downloaded with a web browser. To allow it, run this once in the
+Terminal (the installer above doesn't need it):
+
+```bash
+xattr -dr com.apple.quarantine ~/Applications/Astrolog.app
+```
+
+Or open it, then go to **System Settings → Privacy & Security** and click
+**Open Anyway**.
+
+### Building from the source code
+
+For those who want to read or change the code. Add `--from-source` to the
+installation command:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Juancx3/AstrologMacOS/Macos-AppleSilicon-x11/macos/install.sh) --from-source
+```
+
+Or clone the repository and run the installer from it:
+
+```bash
+git clone -b Macos-AppleSilicon-x11 https://github.com/Juancx3/AstrologMacOS.git ~/Astrolog
+bash ~/Astrolog/macos/install.sh
+```
+
+Besides the steps above, the installer then checks for the Command Line Tools
+(if they're missing, a macOS window offers to install them: click
+**Install**, not "Get Xcode"), downloads the source code into `~/Astrolog`,
+builds it in about a minute, and creates an `Astrolog.app` that runs your
+build. Your `astrolog.as` and `charts` are in the same folder as the code.
+
+To update, run `bash ~/Astrolog/macos/install.sh` again: it downloads the
+latest code and rebuilds. After changing the code, rebuild with:
 
 ```bash
 cd ~/Astrolog
-./astrolog
+make -f macos/Makefile -j8
 ```
 
-| Command | Result |
-|---------|--------|
-| `./astrolog` | Chart for now, using the settings in `astrolog.as` |
-| `./astrolog -X` | Same, forcing the graphics window |
-| `./astrolog _X -v` | Text-only chart listing in the Terminal |
-| `./astrolog -H` | List of all command switches |
+The app picks up the new build without any other step.
+
+## Running Astrolog
+
+Open Astrolog from Spotlight (Command+Space, type *Astrolog*) or Launchpad.
+To keep it in the Dock, right-click its Dock icon while it's open and choose
+**Options → Keep in Dock**.
+
+The app opens a Terminal window and runs Astrolog there, with your settings.
+Keep that window visible next to the chart window: text output, error
+messages and the help lists appear there.
 
 When the graphics window is open, it must have the focus to receive key
 presses. Press `?` with the window focused to list all keys; the list appears
 in the Terminal. Press `Esc` to close the window and exit.
 
-Keep the Terminal visible next to the window: text output, error messages
-and the help lists appear there.
-
-### Launching from an icon
-
-The installer creates `Astrolog.app` in `~/Applications`. Open it from
-Spotlight (Command+Space, type *Astrolog*), then right-click its Dock icon and
-choose **Options → Keep in Dock**.
-
-When opened, the app starts a Terminal window and runs `./astrolog` from your
-Astrolog folder, so text output still has a place to appear. If you move the
-Astrolog folder, run `bash macos/install.sh` from its new location to update
-the app.
-
 To have Terminal close its window when you exit Astrolog, go to
 **Terminal → Settings → Profiles → Shell** and set "When the shell exits" to
 **Close if the shell exited cleanly**.
 
-The graphics window itself still shows the XQuartz icon in the Dock; that
-comes from XQuartz and can't be changed by the launcher.
+The graphics window shows the XQuartz icon in the Dock; that comes from
+XQuartz and can't be changed.
 
-### Running from any folder (optional)
+### Running from the Terminal
 
-To type `astrolog` in any Terminal folder, add these lines to `~/.zshrc` and
-open a new Terminal window:
+To start Astrolog with command switches, add this line to `~/.zshrc` and open
+a new Terminal window:
 
 ```bash
-export ASTROLOG="$HOME/Astrolog"
-export PATH="$HOME/Astrolog:$PATH"
+alias astrolog="$HOME/Applications/Astrolog.app/Contents/Resources/astrolog.command"
 ```
 
-`ASTROLOG` tells the program where to find `astrolog.as`, the ephemeris
-files and the atlas. Keep the `astrolog` program inside its folder; don't
-move it or use a symbolic link to it.
+Then, for example:
+
+| Command | Result |
+|---------|--------|
+| `astrolog` | Chart for now, using the settings in `astrolog.as` |
+| `astrolog -i mychart.as` | Open a chart from your `charts` folder |
+| `astrolog _X -v` | Text-only chart listing in the Terminal |
+| `astrolog -H` | List of all command switches |
+
+If you built from the source code, you can also run `./astrolog` in
+`~/Astrolog`.
 
 ## Keyboard reference
 
@@ -208,10 +242,10 @@ Astrolog behavior.
 
 ## Useful commands
 
-You can type these in the command box (Enter) or after `./astrolog` in the
-Terminal. `mychart.as` stands for one of your chart files. If your settings
-file points to a charts folder (for example `-Yi4 "charts"`), the file name
-alone is enough.
+You can type these in the command box (Enter) or after `astrolog` in the
+Terminal (see [Running from the Terminal](#running-from-the-terminal)).
+`mychart.as` stands for one of your chart files; files in your `charts`
+folder can be named without a path.
 
 | Command | Result |
 |---------|--------|
@@ -231,16 +265,16 @@ looks the city up in its atlas, so you can type a name like "Toronto".
 
 ## Settings file (astrolog.as)
 
-Astrolog reads its default settings from `astrolog.as` in its folder. This
-file is yours: it isn't part of the repository, so updates never overwrite
-it. The installer creates it from `macos/astrolog-default.as`, the standard
-settings with a few changes for the Mac: it starts with the chart for now in
-the graphics window, uses larger glyphs for Retina screens, and looks for
-chart files in the `charts` folder (`-Yi4 "charts"`).
+Astrolog reads its default settings from `astrolog.as` in your settings
+folder: `~/Astrolog`, unless you chose another one with `--dir`. This file is
+yours, and updates never overwrite it. The installer creates it from
+`astrolog-default.as`, the standard settings with a few changes for the Mac:
+it starts with the chart for now in the graphics window, uses larger glyphs
+for Retina screens, and looks for chart files in the `charts` folder.
 
 Edit it to suit you. The location lines are `-z` (time zone), `-zl`
 (longitude and latitude) and `-zj` (place name). To start over, delete
-`astrolog.as` and run `bash ~/Astrolog/macos/install.sh` again.
+`astrolog.as` and open Astrolog: it asks for your city again.
 
 If you bring a settings file from the Windows version, comment out
 (prefix with `;`) every line that begins with `-W`, `_W` or `=W`, such as
@@ -320,13 +354,20 @@ installer sets both; if you answered no, run it again or change them there.
 Hold `fn`, or enable **System Settings → Keyboard → Keyboard Shortcuts →
 Function Keys → "Use F1, F2, etc. keys as standard function keys"**.
 
-**The installer says the build failed**
+**The installer says it couldn't download Astrolog, or that the checksum
+doesn't match**
+Check your internet connection and run the installer again. If it keeps
+happening, please open an issue in this repository.
+
+**Building from source: the installer says the build failed**
 It shows the first errors and the path of the full log
 (`~/Astrolog/build/build.log`). Please open an issue in this repository and
 attach that log.
 
-**macOS says the program can't be opened**
-Go to System Settings → Privacy & Security and click **Open Anyway**.
+**macOS says Astrolog can't be opened, or can't be verified**
+This happens with a copy downloaded with a web browser. See
+[Downloading the app by hand](#downloading-the-app-by-hand), or install with
+the installer command instead.
 
 **"Unknown switch '-WM'" when starting**
 Your `astrolog.as` comes from Windows. Comment out its Windows-only lines
@@ -338,16 +379,37 @@ Files saved on Windows use the Windows-1252 character set. Convert one with:
 
 ## Uninstalling
 
-Delete the Astrolog folder and the app. Copy your `astrolog.as` and the
+Delete the app and the settings folder. Copy your `astrolog.as` and the
 `charts` folder somewhere else first if you want to keep them.
 
 ```bash
-rm -rf ~/Astrolog ~/Applications/Astrolog.app
+rm -rf ~/Applications/Astrolog.app ~/Astrolog
+defaults delete io.github.juancx3.astrolog
 ```
 
-XQuartz can stay; other programs may use it.
+The last line only matters if you chose another settings folder with
+`--dir`; delete that folder too. XQuartz can stay; other programs may use it.
 
-## For maintainers: merging a new Astrolog version
+## For maintainers
+
+### Publishing a release
+
+Create the release on GitHub, for example:
+
+```bash
+gh release create v8.00-mac4 --target Macos-AppleSilicon-x11 --title "Astrolog 8.00 for macOS - mac4" --notes-file notes.md --latest
+```
+
+Publishing it starts the **Build macOS app** workflow
+(`.github/workflows/release.yml`). It builds Astrolog on a Mac, packages the
+app with `macos/make-app.sh --standalone`, tests a chart that needs the
+ephemeris files, and attaches `Astrolog-macOS.zip` and its `.sha256`
+checksum to the release, in a few minutes. The installer always downloads
+the release marked as latest. To test a change without publishing, run the
+workflow by hand from the Actions tab, with no tag: the app is kept as an
+artifact of the run.
+
+### Merging a new Astrolog version
 
 When the author releases a new version, bring it into this fork:
 
@@ -360,7 +422,7 @@ bash macos/install.sh
 ```
 
 The `git remote add` line is needed only the first time. If the author
-changed the same parts of `xscreen.cpp`, `general.cpp` or
+changed the same parts of `xscreen.cpp`, `general.cpp`, `calc.cpp` or
 `astrolog.h`, git will report a conflict that has to be resolved by hand.
 `macos/Makefile` builds without the installer (`make -f macos/Makefile -j8`,
 or `UNIVERSAL=1` for Apple Silicon and Intel).

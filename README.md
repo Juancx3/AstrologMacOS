@@ -12,14 +12,18 @@ press Return:
 bash <(curl -fsSL https://raw.githubusercontent.com/Juancx3/AstrologMacOS/Macos-AppleSilicon-x11/macos/install.sh)
 ```
 
-The installer checks for the two things Astrolog needs (Apple's Command Line
-Tools and XQuartz) and helps you install them, then builds Astrolog, asks for
-your default city and creates an `Astrolog.app` you can open from Spotlight
-or the Dock. Run the same command again to update; it never overwrites your
-settings or your charts.
+It installs the ready-made `Astrolog.app`, with nothing to compile. The
+installer checks for XQuartz (which shows the chart window) and helps you
+install it, asks for your default city, and sets everything up. Open Astrolog
+from Spotlight or the Dock. Run the same command again to update; it never
+overwrites your settings or your charts.
 
 If the installer had to install XQuartz, restart the Mac before opening
 Astrolog.
+
+**Want to read or change the code?** Add `--from-source` at the end of the
+command to build Astrolog yourself; this needs Apple's Command Line Tools.
+See [Building from the source code](README-macOS.md#building-from-the-source-code).
 
 **→ Keyboard reference, useful commands and troubleshooting:
 [README-macOS.md](README-macOS.md).**
@@ -40,27 +44,33 @@ Compared with the official Unix/X11 version of Astrolog 8.00:
 - **More robust macros.** Macros that load a chart with `-i` now keep the
   loaded chart, macros that change colors now take effect, and an error inside
   a macro no longer closes the program.
-- **Long folder paths no longer crash the program.** Outside Windows, a
-  folder path longer than about 45 characters overflowed a buffer at startup.
-- **A one-command installer** that builds the program, creates the settings
-  file for your city and an app to open it from the Dock.
+- **Long folder paths fixed.** Outside Windows, a long folder path could
+  crash the program at startup, or make it lose its ephemeris files, which
+  placed Chiron, Eris and other asteroids at 0° Aries.
+- **A one-command installer** for a ready-made app, built and tested by
+  GitHub Actions for each release, or for building from source.
 
-All changes to the program are in three source files:
+All changes to the program are in four source files:
 
 | File          | Change |
 |---------------|--------|
 | `xscreen.cpp` | Keyboard additions, command box and macro fixes. All code is inside `#ifdef X11`, so the Windows version is not affected. |
 | `general.cpp` | Daylight Saving Time autodetect fix, in the Unix code path only. |
 | `astrolog.h`  | Bounded `snprintf` for `sprintf2` on macOS and Unix, as on Windows. |
+| `calc.cpp`    | The Swiss Ephemeris search path keeps within its length limit. |
 
 The Mac-specific files are in the `macos` folder:
 
 | File | Purpose |
 |------|---------|
-| `install.sh` | The installer and updater |
-| `Makefile` | Builds Astrolog with XQuartz (used by the installer) |
-| `astrolog-default.as` | Settings template for the Mac, copied to `astrolog.as` on first install |
-| `make-app.sh`, `Astrolog.icns` | Create `Astrolog.app` and its icon |
+| `install.sh` | The installer and updater, for the ready-made app or a build from source |
+| `setup.sh` | Per-user setup (settings folder, city, XQuartz options), used by the installer and the app |
+| `Makefile` | Builds Astrolog with XQuartz |
+| `make-app.sh`, `astrolog.command`, `Astrolog.icns` | Create `Astrolog.app` and run Astrolog from it |
+| `astrolog-default.as` | Settings template for the Mac |
+
+The ready-made app is built by `.github/workflows/release.yml` each time a
+release is published.
 
 ## About Astrolog
 

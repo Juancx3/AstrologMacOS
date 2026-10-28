@@ -66,7 +66,7 @@ The Mac-specific files are in the `macos` folder:
 | `install.sh` | The installer and updater, for the ready-made app or a build from source |
 | `setup.sh` | Per-user setup (settings folder, city, XQuartz options), used by the installer and the app |
 | `Makefile` | Builds Astrolog with XQuartz |
-| `make-app.sh`, `astrolog.command`, `Astrolog.icns` | Create `Astrolog.app` and run Astrolog from it |
+| `make-app.sh`, `launcher.c`, `astrolog.command`, `Astrolog.icns` | Create `Astrolog.app` and run Astrolog from it |
 | `astrolog-default.as` | Settings template for the Mac |
 
 The ready-made app is built by `.github/workflows/release.yml` each time a

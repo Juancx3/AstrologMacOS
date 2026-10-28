@@ -14,6 +14,7 @@
 ROOT  := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 BUILD := $(ROOT)/build
 NAME  := $(ROOT)/astrolog
+LAUNCHER := $(BUILD)/AstrologLauncher
 
 X11   ?= /opt/X11
 
@@ -33,7 +34,7 @@ LDLIBS   += -lX11 -lm
 
 .PHONY: all app clean check-x11
 
-all: $(NAME)
+all: $(NAME) $(LAUNCHER)
 
 $(NAME): $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
@@ -43,6 +44,11 @@ $(BUILD)/%.o: $(ROOT)/%.cpp $(HDRS) | check-x11
 	@mkdir -p $(BUILD)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+# The executable of Astrolog.app (see launcher.c).
+$(LAUNCHER): $(ROOT)/macos/launcher.c
+	@mkdir -p $(BUILD)
+	$(CC) -O2 $(ARCH) -o $@ $<
+
 check-x11:
 	@if [ ! -f "$(X11)/include/X11/Xlib.h" ]; then \
 	  echo "Can't find $(X11)/include/X11/Xlib.h."; \
@@ -50,7 +56,7 @@ check-x11:
 	  exit 1; \
 	fi
 
-app: $(NAME)
+app: $(NAME) $(LAUNCHER)
 	bash "$(ROOT)/macos/make-app.sh"
 
 clean:

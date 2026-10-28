@@ -29,8 +29,10 @@ DEST="${1:-$HOME/Applications}"
 APP="$DEST/Astrolog.app"
 RES="$APP/Contents/Resources"
 
-if [ ! -x "$SRC/astrolog" ]; then
-  echo "Can't find the compiled program at $SRC/astrolog."
+LAUNCHER="$SRC/build/AstrologLauncher"
+if [ ! -x "$SRC/astrolog" ] || [ ! -x "$LAUNCHER" ]; then
+  echo "Can't find the compiled program at $SRC/astrolog, or the app's"
+  echo "launcher at $LAUNCHER."
   echo "Build Astrolog first (make -f macos/Makefile), then run this script again."
   exit 1
 fi
@@ -93,12 +95,9 @@ cat > "$APP/Contents/Info.plist" <<EOF
 </plist>
 EOF
 
-# The app's own executable: open the script above in Terminal.
-cat > "$APP/Contents/MacOS/Astrolog" <<'EOF'
-#!/bin/bash
-HERE="$(cd "$(dirname "$0")/../Resources" && pwd)"
-exec open -a Terminal "$HERE/astrolog.command"
-EOF
+# The app's own executable opens astrolog.command in Terminal. It must be a
+# compiled program, not a script: macOS runs script-only apps under Rosetta.
+cp "$LAUNCHER" "$APP/Contents/MacOS/Astrolog"
 chmod +x "$APP/Contents/MacOS/Astrolog"
 
 if [ "$STANDALONE" = 0 ]; then

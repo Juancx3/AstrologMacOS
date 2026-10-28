@@ -47,8 +47,13 @@ jobs:
             UNIVERSAL=0
           fi
           make -f macos/Makefile -j"$(sysctl -n hw.ncpu)" UNIVERSAL=$UNIVERSAL
-          file astrolog
+          file astrolog build/AstrologLauncher
           otool -L astrolog
+          # Both must run natively on Apple Silicon. If the app's executable
+          # weren't arm64 (for example a script), macOS would ask for Rosetta.
+          for f in astrolog build/AstrologLauncher; do
+            lipo -archs "$f" | grep -qw arm64 || { echo "$f isn't arm64"; exit 1; }
+          done
 
       - name: Package
         env:
@@ -58,6 +63,8 @@ jobs:
           codesign --force --sign - dist/Astrolog.app/Contents/Resources/program/astrolog
           codesign --force --sign - dist/Astrolog.app
           codesign --verify --strict dist/Astrolog.app
+          file dist/Astrolog.app/Contents/MacOS/Astrolog | grep -q "Mach-O" \
+            || { echo "The app's executable isn't a compiled program"; exit 1; }
           cd dist
           ditto -c -k --keepParent Astrolog.app Astrolog-macOS.zip
           shasum -a 256 Astrolog-macOS.zip > Astrolog-macOS.zip.sha256

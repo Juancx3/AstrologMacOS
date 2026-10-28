@@ -1,0 +1,99 @@
+# Builds the ready-made Astrolog.app on a Mac and attaches it to a release.
+#
+# Publishing a release on GitHub starts it automatically. It can also be run
+# by hand from the Actions tab: with a tag, it attaches the app to that
+# release; without one, it only builds and keeps the app as a downloadable
+# artifact of the run, which is useful to test a change.
+
+name: Build macOS app
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach the app to (empty: only build)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+
+      - name: Install XQuartz
+        run: |
+          if [ ! -f /opt/X11/include/X11/Xlib.h ]; then
+            brew install --cask xquartz
+          fi
+          lipo -info /opt/X11/lib/libX11.6.dylib
+
+      - name: Build
+        run: |
+          # Universal (Apple Silicon and Intel) when XQuartz's library is.
+          if lipo -info /opt/X11/lib/libX11.6.dylib | grep -q x86_64; then
+            UNIVERSAL=1
+          else
+            UNIVERSAL=0
+          fi
+          make -f macos/Makefile -j"$(sysctl -n hw.ncpu)" UNIVERSAL=$UNIVERSAL
+          file astrolog
+          otool -L astrolog
+
+      - name: Package
+        env:
+          ASTROLOG_RELEASE_TAG: ${{ env.TAG }}
+        run: |
+          bash macos/make-app.sh --standalone dist
+          codesign --force --sign - dist/Astrolog.app/Contents/Resources/program/astrolog
+          codesign --force --sign - dist/Astrolog.app
+          codesign --verify --strict dist/Astrolog.app
+          cd dist
+          ditto -c -k --keepParent Astrolog.app Astrolog-macOS.zip
+          shasum -a 256 Astrolog-macOS.zip > Astrolog-macOS.zip.sha256
+          ls -l
+          cat Astrolog-macOS.zip.sha256
+
+      - name: Test the packaged app
+        run: |
+          # Unpack it like the installer does, set up a settings folder, and
+          # cast a chart in text mode (no display needed).
+          mkdir -p "$RUNNER_TEMP/t"
+          ditto -x -k dist/Astrolog-macOS.zip "$RUNNER_TEMP/t"
+          RES="$RUNNER_TEMP/t/Astrolog.app/Contents/Resources"
+          DATA="$RUNNER_TEMP/Astrolog"
+          bash "$RES/setup.sh" --data "$DATA" --files "$RES/program" --city "Toronto, ON" --yes
+          printf '%s\n' '@AD800' '-zi "Test" "Bogota, CO"' '-qa 3 15 1980 10:30 5:00W 74:05W 4:36N' > "$DATA/charts/test.as"
+          cd "$DATA"
+          OUT="$("$RES/program/astrolog" -Yi9 "$DATA/charts" -i test.as -R0 Chi Eri _X _k -v 2>&1)"
+          echo "$OUT"
+          # Chiron and Eris need the ephemeris files: if they aren't found,
+          # both come out at 0 Aries.
+          if echo "$OUT" | grep -q "not found"; then echo "Ephemeris files not found"; exit 1; fi
+          echo "$OUT" | grep -q "^Chir: 10Tau38" || { echo "Wrong Chiron position"; exit 1; }
+          echo "$OUT" | grep -q "^Eris: 14Ari18" || { echo "Wrong Eris position"; exit 1; }
+          grep -q '^-zj "Current moment now" "Toronto, ON"' "$DATA/astrolog.as"
+
+      - name: Keep the app as an artifact of this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: Astrolog-macOS
+          path: |
+            dist/Astrolog-macOS.zip
+            dist/Astrolog-macOS.zip.sha256
+
+      - name: Attach to the release
+        if: env.TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist/Astrolog-macOS.zip dist/Astrolog-macOS.zip.sha256 --clobber

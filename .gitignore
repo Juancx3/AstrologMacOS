@@ -11,3 +11,4 @@ build/
 astrolog.as.backup-*
 astrolog.as.windows
 !macos/astrolog-default.as
+dist/

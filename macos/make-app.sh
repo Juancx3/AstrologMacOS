@@ -1,46 +1,78 @@
 #!/bin/bash
 #
-# make-app.sh - Create Astrolog.app, a launcher you can open from the Dock,
-# Launchpad, Spotlight or Finder.
+# make-app.sh - Create Astrolog.app, which opens Astrolog from the Dock,
+# Launchpad, Spotlight or Finder. install.sh runs it for you.
 #
-# Run it once from the Astrolog folder, after building the program:
+#   bash macos/make-app.sh [DEST]
+#       For a copy built from source: the app runs ./astrolog in this folder,
+#       which also holds your astrolog.as and charts. Rebuilding Astrolog
+#       doesn't require running this again; moving the folder does.
 #
-#     cd ~/Astrolog
-#     bash macos/make-app.sh                 # installs in ~/Applications
-#     bash macos/make-app.sh /Applications   # or in the main Applications folder
+#   bash macos/make-app.sh --standalone [DEST]
+#       Self-contained app, as published in the releases: the program and its
+#       data files go inside the app, and your settings live in ~/Astrolog.
 #
-# The app opens a Terminal window and runs ./astrolog there, so text output,
-# help lists and error messages appear as usual. It runs the program from this
-# folder, so rebuilding Astrolog does not require running this script again.
-# Run it again only if you move the Astrolog folder.
+# DEST is the folder where the app is created, ~/Applications by default.
+# The app opens a Terminal window (macos/astrolog.command) and runs Astrolog
+# there, so text output, help lists and error messages appear as usual.
 
 set -euo pipefail
 
-SRC="$(cd "$(dirname "$0")/.." && pwd)"   # the Astrolog folder
+STANDALONE=0
+if [ "${1:-}" = "--standalone" ]; then
+  STANDALONE=1
+  shift
+fi
+
+SRC="$(cd "$(dirname "$0")/.." && pwd)"   # the Astrolog source folder
 DEST="${1:-$HOME/Applications}"
 APP="$DEST/Astrolog.app"
+RES="$APP/Contents/Resources"
 
 if [ ! -x "$SRC/astrolog" ]; then
   echo "Can't find the compiled program at $SRC/astrolog."
-  echo "Build Astrolog first (see README-macOS.md), then run this script again."
-  exit 1
-fi
-if [ ! -f "$SRC/macos/Astrolog.icns" ]; then
-  echo "Can't find the icon at $SRC/macos/Astrolog.icns."
+  echo "Build Astrolog first (make -f macos/Makefile), then run this script again."
   exit 1
 fi
 
 VERSION="$(sed -n 's/^#define szVersionCore "\(.*\)".*/\1/p' "$SRC/astrolog.h" 2>/dev/null || true)"
 VERSION="${VERSION:-8.00}"
+BUILD="${ASTROLOG_RELEASE_TAG:-$VERSION}"   # e.g. v8.00-mac3 when built for a release
+BUILD="${BUILD#v}"
 
 mkdir -p "$DEST"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+mkdir -p "$APP/Contents/MacOS" "$RES"
 
-# --- Icon -------------------------------------------------------------------
-cp "$SRC/macos/Astrolog.icns" "$APP/Contents/Resources/Astrolog.icns"
+cp "$SRC/macos/Astrolog.icns" "$RES/Astrolog.icns"
+cp "$SRC/macos/astrolog.command" "$RES/astrolog.command"
+chmod +x "$RES/astrolog.command"
 
-# --- Info.plist -------------------------------------------------------------
+if [ "$STANDALONE" = 1 ]; then
+  # The program and every file it reads at run time. Not astrolog.as: the
+  # program looks in its own folder first, and settings must come from the
+  # user's settings folder instead.
+  mkdir -p "$RES/program"
+  cp "$SRC/astrolog" "$RES/program/"
+  cp -R "$SRC/ephem" "$SRC/font" "$RES/program/"
+  for f in atlas.as timezone.as sefstars.txt seorbel.txt astexo.csv; do
+    cp "$SRC/$f" "$RES/program/"
+  done
+  cp "$SRC/macos/astrolog-default.as" "$RES/program/"
+  cp "$SRC/macos/setup.sh" "$RES/setup.sh"
+  chmod +x "$RES/setup.sh"
+  cp "$SRC/license.htm" "$SRC/README-macOS.md" "$RES/"
+  cat > "$RES/SOURCE.txt" <<EOF
+Astrolog $BUILD for macOS. Astrolog is Copyright (C) 1991-2026 Walter D. Pullen
+and is distributed under the GNU General Public License, version 2 or later
+(see license.htm). The source code of this version is available at:
+https://github.com/Juancx3/AstrologMacOS
+EOF
+  echo "MODE=standalone" > "$RES/launcher.conf"
+else
+  printf 'MODE=source\nSOURCE_DIR=%q\n' "$SRC" > "$RES/launcher.conf"
+fi
+
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -53,42 +85,15 @@ cat > "$APP/Contents/Info.plist" <<EOF
   <key>CFBundleIconFile</key>           <string>Astrolog</string>
   <key>CFBundlePackageType</key>        <string>APPL</string>
   <key>CFBundleShortVersionString</key> <string>$VERSION</string>
-  <key>CFBundleVersion</key>            <string>$VERSION</string>
+  <key>CFBundleVersion</key>            <string>$BUILD</string>
   <key>CFBundleInfoDictionaryVersion</key> <string>6.0</string>
+  <key>LSMinimumSystemVersion</key>     <string>11.0</string>
   <key>NSHumanReadableCopyright</key>   <string>Astrolog (C) 1991-2026 Walter D. Pullen. GPL v2 or later.</string>
 </dict>
 </plist>
 EOF
 
-# --- Script that runs inside Terminal --------------------------------------
-QSRC="$(printf '%q' "$SRC")"
-cat > "$APP/Contents/Resources/astrolog.command" <<EOF
-#!/bin/bash
-# Started by Astrolog.app. Runs Astrolog from its folder.
-printf '\033]0;Astrolog\007'          # window title
-ASTRODIR=$QSRC
-cd "\$ASTRODIR" || { echo "Astrolog folder not found: \$ASTRODIR"; echo "Run macos/make-app.sh again from its new location."; read -n 1 -s; exit 1; }
-
-# Make sure the X11 display is reachable. Normally macOS sets DISPLAY and
-# starts XQuartz on demand; this is only a fallback.
-if [ -z "\${DISPLAY:-}" ]; then
-  open -a XQuartz
-  for i in \$(seq 1 30); do [ -S /tmp/.X11-unix/X0 ] && break; sleep 0.5; done
-  export DISPLAY=:0
-fi
-
-./astrolog "\$@"
-status=\$?
-if [ \$status -ne 0 ]; then
-  echo
-  echo "Astrolog ended with an error (code \$status). Press any key to close."
-  read -n 1 -s
-fi
-exit 0
-EOF
-chmod +x "$APP/Contents/Resources/astrolog.command"
-
-# --- The app's own executable: open the script above in Terminal ------------
+# The app's own executable: open the script above in Terminal.
 cat > "$APP/Contents/MacOS/Astrolog" <<'EOF'
 #!/bin/bash
 HERE="$(cd "$(dirname "$0")/../Resources" && pwd)"
@@ -96,13 +101,13 @@ exec open -a Terminal "$HERE/astrolog.command"
 EOF
 chmod +x "$APP/Contents/MacOS/Astrolog"
 
-# Files downloaded from the web carry a quarantine flag; a locally made app
-# doesn't need it. Then nudge Finder to pick up the icon.
-xattr -cr "$APP" 2>/dev/null || true
-touch "$APP"
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-  -f "$APP" 2>/dev/null || true
+if [ "$STANDALONE" = 0 ]; then
+  # A locally made app doesn't need the quarantine flag. Then nudge Finder
+  # to pick up the icon.
+  xattr -cr "$APP" 2>/dev/null || true
+  touch "$APP"
+  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+    -f "$APP" 2>/dev/null || true
+fi
 
 echo "Created $APP"
-echo "Open it from Launchpad or Spotlight (Command+Space, type Astrolog),"
-echo "or drag it to the Dock to keep it there."

@@ -66,14 +66,14 @@ Intel-based programs to run on macOS. Apple have announced that, starting with M
 Intel-based software will no longer be supported.
 
 This forced me to look for alternatives. I checked out other programs for macOS, but none of them suit me 
-or offer the same ease of use. So, I decided to create a fork, a streamlined version of Astrolog that 
-includes the commands I use most often (transits, progressions, and macros).
+or offer the same ease of use. So, I decided to create a fork of Astrolog.
 
 I’m building this primarily for myself, but I felt it was appropriate to share it with Walter 
 (whom I greatly admire for his fantastic work). 
-As of now, only a few specific functions have been ported to macOS. 
-If the community feels that other features should be added to this version 
-(and provided Walter gives his approval)I’d be happy to look into it.
+As of now, he complete Astrolog engine runs natively on macOS; what I’ve added are keyboard shortcuts 
+for the features I use most (transits, progressions and macros) and an in-window command line. 
+If the community feels that other MacOS compatible shortcuts should be added to this version 
+(and provided Walter gives his approval) I’d be happy to look into it.
 
 The macOS changes in this fork were made in October 2026 by
 [Juancx3](https://github.com/Juancx3) and are distributed under the same

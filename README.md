@@ -3,7 +3,26 @@
 This is a fork of Astrolog 8.00 by Walter D. Pullen, adapted to build and run
 natively on Apple Silicon Macs, with graphics through XQuartz (X11).
 
-**→ To install and use it on a Mac, see [README-macOS.md](README-macOS.md).**
+## Install
+
+Open the Terminal (Applications → Utilities → Terminal), paste this line and
+press Return:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Juancx3/AstrologMacOS/Macos-AppleSilicon-x11/macos/install.sh)
+```
+
+The installer checks for the two things Astrolog needs (Apple's Command Line
+Tools and XQuartz) and helps you install them, then builds Astrolog, asks for
+your default city and creates an `Astrolog.app` you can open from Spotlight
+or the Dock. Run the same command again to update; it never overwrites your
+settings or your charts.
+
+If the installer had to install XQuartz, restart the Mac before opening
+Astrolog.
+
+**→ Keyboard reference, useful commands and troubleshooting:
+[README-macOS.md](README-macOS.md).**
 
 ## What this fork adds
 
@@ -21,14 +40,27 @@ Compared with the official Unix/X11 version of Astrolog 8.00:
 - **More robust macros.** Macros that load a chart with `-i` now keep the
   loaded chart, macros that change colors now take effect, and an error inside
   a macro no longer closes the program.
-- A sample `astrolog.as` settings file with the Windows-only switches disabled.
+- **Long folder paths no longer crash the program.** Outside Windows, a
+  folder path longer than about 45 characters overflowed a buffer at startup.
+- **A one-command installer** that builds the program, creates the settings
+  file for your city and an app to open it from the Dock.
 
-All changes to the program are in two source files:
+All changes to the program are in three source files:
 
 | File          | Change |
 |---------------|--------|
 | `xscreen.cpp` | Keyboard additions, command box and macro fixes. All code is inside `#ifdef X11`, so the Windows version is not affected. |
 | `general.cpp` | Daylight Saving Time autodetect fix, in the Unix code path only. |
+| `astrolog.h`  | Bounded `snprintf` for `sprintf2` on macOS and Unix, as on Windows. |
+
+The Mac-specific files are in the `macos` folder:
+
+| File | Purpose |
+|------|---------|
+| `install.sh` | The installer and updater |
+| `Makefile` | Builds Astrolog with XQuartz (used by the installer) |
+| `astrolog-default.as` | Settings template for the Mac, copied to `astrolog.as` on first install |
+| `make-app.sh`, `Astrolog.icns` | Create `Astrolog.app` and its icon |
 
 ## About Astrolog
 
@@ -70,7 +102,7 @@ or offer the same ease of use. So, I decided to create a fork of Astrolog.
 
 I’m building this primarily for myself, but I felt it was appropriate to share it with Walter 
 (whom I greatly admire for his fantastic work). 
-As of now, he complete Astrolog engine runs natively on macOS; what I’ve added are keyboard shortcuts 
+As of now, the complete Astrolog engine runs natively on macOS; what I’ve added are keyboard shortcuts 
 for the features I use most (transits, progressions and macros) and an in-window command line. 
 If the community feels that other MacOS compatible shortcuts should be added to this version 
 (and provided Walter gives his approval) I’d be happy to look into it.

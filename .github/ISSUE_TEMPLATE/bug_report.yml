@@ -1,0 +1,51 @@
+name: Problem report
+description: Something doesn't work in Astrolog for macOS (installing, opening, keys, charts)
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. This repository is the unofficial macOS version of Astrolog.
+        For questions about Astrolog itself (its charts, switches or calculations), see the
+        [official Astrolog site](https://www.astrolog.org/astrolog.htm).
+
+        Before reporting, please check [Troubleshooting](https://github.com/Juancx3/AstrologMacOS/blob/Macos-AppleSilicon-x11/README-macOS.md#troubleshooting).
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install Astrolog?
+      options:
+        - With the installer command (ready-made app)
+        - Downloaded Astrolog-macOS.zip by hand
+        - Built from source (--from-source, or from a clone)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Astrolog version
+      description: In Finder, right-click Astrolog.app > Get Info, or the release you installed (for example 8.00-mac3)
+      placeholder: 8.00-mac3
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      description: Apple menu > About This Mac
+      placeholder: macOS 26.7, MacBook Air M2
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Terminal output
+      description: |
+        Paste the messages from the Terminal window (from the installer, or the window Astrolog opens).
+        If building from source failed, attach ~/Astrolog/build/build.log.
+      render: text

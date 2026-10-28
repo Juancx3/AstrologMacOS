@@ -86,36 +86,37 @@ are described at <http://www.astrolog.org/ftp/updat800.htm>.
 ## License and credits
 
 Astrolog is Copyright (C) 1991-2026 by Walter D. Pullen and is distributed
-under the GNU General Public License, version 2 or later. See
-[license.htm](license.htm) for the full license and for the credits of the
-components Astrolog includes, such as the Swiss Ephemeris.
+under the GNU General Public License, version 2 or later. The text of the
+license is in [LICENSE](LICENSE); [license.htm](license.htm) also lists the
+credits of the components Astrolog includes, such as the Swiss Ephemeris.
 
-## About the editor of this MacOS Version
+## About the editor of this macOS version
 
-I’m a geeky engineer working in cybersecurity, but I also have a hobby: astrology. 
+I’m a geeky engineer working in cybersecurity, but I also have a hobby: astrology.
 (Yes, I know, I’m a bit eccentric!)
 
-I was always been interested in astrology, but the available software was either 
+I’ve always been interested in astrology, but the available software was either
 prohibitively expensive or absurdly cumbersome to use.
 
-Since I couldn’t afford to buy an astrology program, I stumbled upon Astrolog by chance. 
+Since I couldn’t afford to buy an astrology program, I stumbled upon Astrolog by chance.
 Even though I’ve since been able to purchase other professional software, Astrolog remains my favorite.
 
-The thing is, I’ve been using Astrolog for ˜26 years (!!!) always on Windows. I now use a Mac, 
-and for the last four years, I’ve been running Astrolog on macOS via Wine. 
-However, Apple has decided to phase out the translation layer (Rosetta) that allows 
-Intel-based programs to run on macOS. Apple have announced that, starting with MacOS v28, 
+The thing is, I’ve been using Astrolog for about 26 years (!!!), always on Windows. I now use a Mac,
+and for the last four years I’ve been running Astrolog on macOS via Wine.
+However, Apple has decided to phase out the translation layer (Rosetta) that allows
+Intel-based programs to run on macOS. Apple has announced that, starting with macOS 28,
 Intel-based software will no longer be supported.
 
-This forced me to look for alternatives. I checked out other programs for macOS, but none of them suit me 
-or offer the same ease of use. So, I decided to create a fork of Astrolog.
+This forced me to look for alternatives. I checked out other programs for macOS, but none of them suited me
+or offered the same ease of use. So I decided to create a fork of Astrolog.
 
-I’m building this primarily for myself, but I felt it was appropriate to share it with Walter 
-(whom I greatly admire for his fantastic work). 
-As of now, the complete Astrolog engine runs natively on macOS; what I’ve added are keyboard shortcuts 
-for the features I use most (transits, progressions and macros) and an in-window command line. 
-If the community feels that other MacOS compatible shortcuts should be added to this version 
-(and provided Walter gives his approval) I’d be happy to look into it.
+I’m building this primarily for myself, but I felt it was appropriate to share it with Walter
+(whom I greatly admire for his fantastic work).
+As of now, the complete Astrolog engine runs natively on macOS; what I’ve added are keyboard shortcuts
+for the features I use most (transits, progressions and macros), an in-window command line, and an
+installer that makes it easy to set up.
+If the community feels that other macOS-compatible shortcuts should be added to this version
+(and provided Walter gives his approval), I’d be happy to look into it.
 
 The macOS changes in this fork were made in October 2026 by
 [Juancx3](https://github.com/Juancx3) and are distributed under the same

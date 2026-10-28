@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Installation and usage guide
+    url: https://github.com/Juancx3/AstrologMacOS/blob/Macos-AppleSilicon-x11/README-macOS.md
+    about: Keyboard reference, useful commands and troubleshooting for the macOS version.
+  - name: Official Astrolog site
+    url: https://www.astrolog.org/astrolog.htm
+    about: Documentation for Astrolog itself, by Walter D. Pullen.

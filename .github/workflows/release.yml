@@ -27,7 +27,7 @@ jobs:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
 
@@ -85,7 +85,7 @@ jobs:
           grep -q '^-zj "Current moment now" "Toronto, ON"' "$DATA/astrolog.as"
 
       - name: Keep the app as an artifact of this run
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Astrolog-macOS
           path: |

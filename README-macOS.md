@@ -147,6 +147,33 @@ in the Terminal. Press `Esc` to close the window and exit.
 Keep the Terminal visible next to the window: text output, error messages
 and the help lists appear there.
 
+### Launching from an icon
+
+You can create an `Astrolog.app` that opens Astrolog from the Dock, Launchpad,
+Spotlight or Finder. Run this once, after building:
+
+```bash
+cd ~/Astrolog
+bash macos/make-app.sh
+```
+
+The app is created in `~/Applications`. To put it in the main Applications
+folder instead, run `bash macos/make-app.sh /Applications`. Open it once from
+Spotlight (Command+Space, type *Astrolog*), then right-click its Dock icon and
+choose **Options → Keep in Dock**.
+
+When opened, the app starts a Terminal window and runs `./astrolog` from your
+Astrolog folder, so text output still has a place to appear. After rebuilding
+Astrolog there's nothing to redo; run the script again only if you move the
+Astrolog folder.
+
+To have Terminal close its window when you exit Astrolog, go to
+**Terminal → Settings → Profiles → Shell** and set "When the shell exits" to
+**Close if the shell exited cleanly**.
+
+The graphics window itself still shows the XQuartz icon in the Dock; that
+comes from XQuartz and can't be changed by the launcher.
+
 ## Keyboard reference
 
 ### Added by this fork

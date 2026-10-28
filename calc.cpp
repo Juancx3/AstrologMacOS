@@ -2448,6 +2448,23 @@ void CreateElemTable(ET *pet)
 #include "swephlib.h"
 #define ret cp0.dir
 
+// Add a folder to the Swiss Ephemeris search path, but only if the whole
+// path still fits: swe_set_ephe_path() ignores a path longer than
+// AS_MAXCH-1-13 characters entirely, and would then find no ephemeris files.
+// Folders listed first (current, executable, ephemeris) matter most, so any
+// folder that doesn't fit is left out rather than truncating the path.
+
+static flag FSwissAppendPath(char *szPath, CONST char *szDir)
+{
+  int cchMax = AS_MAXCH-1-13;
+
+  if (CchSz(szPath) + CchSz(PATH_SEPARATOR) + CchSz(szDir) > cchMax)
+    return fFalse;
+  sprintf(szPath + CchSz(szPath), "%s%s", PATH_SEPARATOR, szDir);
+  return fTrue;
+}
+
+
 // Set up path for Swiss Ephemeris to search in for ephemeris files.
 
 void SwissEnsurePath()
@@ -2476,7 +2493,7 @@ void SwissEnsurePath()
   *pch = chNull;
 
   // First look for the file in the current directory, and that of executable.
-  sprintf(szPath, ".%s%s", PATH_SEPARATOR, szExe);
+  sprintf2(S(szPath), ".%s%s", PATH_SEPARATOR, szExe);
   // Next look in the directories indicated by the -Yi switch.
   for (i = 0; i < 10; i++) {
     pch = us.rgszPath[i];
@@ -2490,8 +2507,7 @@ void SwissEnsurePath()
       } else
         pch = szT;
       sprintf2(SO(pch, szT), "%s", us.rgszPath[i]);
-      sprintf2(SO(szPath + CchSz(szPath), szPath), "%s%s", PATH_SEPARATOR,
-        szT);
+      FSwissAppendPath(szPath, szT);
     }
   }
 #ifdef ENVIRON
@@ -2504,25 +2520,25 @@ void SwissEnsurePath()
     pch++;
   env = getenv(szT);
   if (FSzSet(env))
-    sprintf2(SO(szPath + CchSz(szPath), szPath), "%s%s", PATH_SEPARATOR, env);
+    FSwissAppendPath(szPath, env);
   // Next look in the directory in the general environment variable.
   env = getenv(ENVIRONALL);
   if (FSzSet(env))
-    sprintf2(SO(szPath + CchSz(szPath), szPath), "%s%s", PATH_SEPARATOR, env);
+    FSwissAppendPath(szPath, env);
   // Next look in the directory in the version prefix environment variable.
   env = getenv(ENVIRONVER);
   if (FSzSet(env))
-    sprintf2(SO(szPath + CchSz(szPath), szPath), "%s%s", PATH_SEPARATOR, env);
+    FSwissAppendPath(szPath, env);
 #endif
   // Finally look in a directory specified at compile time.
   pch = EPHE_DIR;
   if (FSzSet(pch))
-    sprintf2(SO(szPath + CchSz(szPath), szPath), "%s%s", PATH_SEPARATOR,
-      EPHE_DIR);
-  if (CchSz(szPath) >= sizeof(szPath)-1) {
+    FSwissAppendPath(szPath, EPHE_DIR);
+  if (CchSz(szPath) > AS_MAXCH-1-13) {
     sprintf(szT,
-      "Swiss Ephemeris file path longer than %d characters, so truncated.",
-      (int)sizeof(szPath)-1);
+      "Astrolog's folder path is too long (over %d characters) for the "
+      "Swiss Ephemeris, so its ephemeris files may not be found.",
+      AS_MAXCH-1-13);
     PrintWarning(szT);
   }
   swe_set_ephe_path(szPath);

@@ -379,7 +379,9 @@
 #ifdef SWISS
 #endif // SWISS
 
-#ifdef PC
+// macOS and Unix also have snprintf. Without bounds checking, a long folder
+// path overflows fixed buffers such as the Swiss Ephemeris path.
+#if defined(PC) || defined(__APPLE__) || defined(__unix__)
 #define sprintf2 snprintf
 #define S(sz) (sz), (int)sizeof(sz)
 #define SO(pch, sz) (pch), (sizeof(sz) - ((pch) - (sz)))
